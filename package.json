@@ -1,14 +1,12 @@
 {
   "name": "vite-react-typescript-starter",
   "private": true,
-  "homepage": "https://Autocrat2005.github.io/AttendanceTracker",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "deploy": "gh-pages -d dist",
     "preview": "vite preview"
   },
   "dependencies": {
