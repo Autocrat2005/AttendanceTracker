@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Plus, GraduationCap, RefreshCw } from 'lucide-react';
 import {
@@ -23,54 +21,21 @@ interface Subject {
   total: number;
 }
 
-// API functions
-const fetchSubjects = async (): Promise<Subject[]> => {
-  const { data } = await axios.get('/api/subjects');
-  return data;
-};
-
-const addSubjectApi = async (subject: Omit<Subject, 'id'>): Promise<Subject> => {
-  const { data } = await axios.post('/api/subjects', subject);
-  return data;
-};
-
-const updateSubjectApi = async (subject: Subject): Promise<Subject> => {
-  const { data } = await axios.put(`/api/subjects/${subject.id}`, subject);
-  return data;
-};
-
-const resetSubjectsApi = async (): Promise<void> => {
-  await axios.delete('/api/subjects');
-};
-
 function App() {
+  const [subjects, setSubjects] = useState<Subject[]>([
+    { id: '1', name: 'Mathematics', attended: 12, total: 15 },
+    { id: '2', name: 'Physics', attended: 8, total: 10 },
+    { id: '3', name: 'Computer Science', attended: 14, total: 15 },
+  ]);
   const [newSubject, setNewSubject] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: subjects = [], isLoading } = useQuery<Subject[]>(['subjects'], fetchSubjects);
-
-  const addSubjectMutation = useMutation(addSubjectApi, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['subjects']);
-    },
-  });
-
-  const updateSubjectMutation = useMutation(updateSubjectApi, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['subjects']);
-    },
-  });
-
-  const resetDataMutation = useMutation(resetSubjectsApi, {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['subjects']);
-    },
-  });
 
   const addSubject = () => {
     if (newSubject.trim()) {
-      addSubjectMutation.mutate({ name: newSubject, attended: 0, total: 0 });
+      setSubjects([
+        ...subjects,
+        { id: Date.now().toString(), name: newSubject, attended: 0, total: 0 },
+      ]);
       setNewSubject('');
       setDialogOpen(false);
     }
@@ -83,36 +48,33 @@ function App() {
   };
 
   const updateAttendance = (id: string, checked: boolean) => {
-    const subject = subjects.find(s => s.id === id);
-    if (subject) {
-      const updatedSubject = {
-        ...subject,
-        attended: checked
-          ? Math.min(subject.attended + 1, subject.total)
-          : Math.max(subject.attended - 1, 0),
-      };
-      updateSubjectMutation.mutate(updatedSubject);
-    }
+    setSubjects(
+      subjects.map((subject) =>
+        subject.id === id
+          ? {
+              ...subject,
+              attended: checked
+                ? Math.min(subject.attended + 1, subject.total)
+                : Math.max(subject.attended - 1, 0),
+            }
+          : subject
+      )
+    );
   };
 
   const addClassToSubject = (id: string) => {
-    const subject = subjects.find(s => s.id === id);
-    if (subject) {
-      const updatedSubject = {
-        ...subject,
-        total: subject.total + 1,
-      };
-      updateSubjectMutation.mutate(updatedSubject);
-    }
+    setSubjects(
+      subjects.map((subject) =>
+        subject.id === id
+          ? { ...subject, total: subject.total + 1 }
+          : subject
+      )
+    );
   };
 
   const resetData = () => {
-    resetDataMutation.mutate();
+    setSubjects([]);
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <ThemeProvider defaultTheme="dark">
